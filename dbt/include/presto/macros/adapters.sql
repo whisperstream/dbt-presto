@@ -25,9 +25,9 @@
       from
       {{ relation.information_schema('columns') }}
 
-      where {{ presto_ilike('table_name', relation.identifier) }}
+      where lower(table_name) = lower('{{ relation.identifier }}')
         {% if relation.schema %}
-        and {{ presto_ilike('table_schema', relation.schema) }}
+        and lower(table_schema) = lower('{{ relation.schema }}')
         {% endif %}
       order by ordinal_position
 
@@ -49,7 +49,7 @@
            else table_type
       end as table_type
     from {{ relation.information_schema() }}.tables
-    where {{ presto_ilike('table_schema', relation.schema) }}
+    where lower(table_schema) = lower('{{ relation.schema }}')
   {% endcall %}
   {{ return(load_result('list_relations_without_caching').table) }}
 {% endmacro %}
@@ -96,7 +96,7 @@
 {%- endmacro %}
 
 
-{# On Presto, 'cascade' isn't supported so we have to manually cascade. #}
+{# On Presto, 'cascade' isnt supported so we have to manually cascade. #}
 {% macro presto__drop_schema(relation) -%}
   {% for relation in adapter.list_relations(relation.database, relation.schema) %}
     {% do drop_relation(relation) %}
@@ -132,8 +132,8 @@
   {% call statement('check_schema_exists', fetch_result=True, auto_begin=False) -%}
         select count(*)
         from {{ information_schema }}.schemata
-        where {{ presto_ilike('catalog_name', information_schema.database) }}
-          and {{ presto_ilike('schema_name', schema) }}
+        where lower(catalog_name) = lower('{{ information_schema.database }}')
+          and lower(schema_name) = lower('{{ schema }}')
   {%- endcall %}
   {{ return(load_result('check_schema_exists').table) }}
 {% endmacro %}
